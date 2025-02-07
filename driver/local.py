@@ -3,6 +3,7 @@ import json
 import time
 import usb.core
 import usb.util
+from src.request_src.api_request import create_app
 
 # Configuração da porta serial (ajuste conforme necessário)
 PORT = 'COM6'
@@ -80,4 +81,6 @@ def list_usb_devices():
 ##
 #list_usb_devices()
 # Enviar os dados para a ESP32
-send_json_to_esp32(data_to_send)
+create_app()
+#send_json_to_esp32(data_to_send)
+
