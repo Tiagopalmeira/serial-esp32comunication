@@ -5,13 +5,14 @@ import usb.core
 import usb.util
 
 # Configuração da porta serial (ajuste conforme necessário)
-PORT = 'COM4'
+PORT = 'COM6'
 BAUDRATE = 115200
 
 # Definição dos dispositivos autorizados (VID e PID)
 AUTHORIZED_DEVICES = [
     {"vid": 0x1a86, "pid": 0x55d4},  #exemplo aleatório
     {"vid": 0x1a2c, "pid": 0x45ea},  #esp32
+    {"vid": 0x483, "pid": 0x374e},
 ]
 
 
@@ -64,5 +65,18 @@ data_to_send = {
     "process": True
 }
 
+def list_usb_devices():
+    devices = usb.core.find(find_all=True)
+ 
+  
+    for device in devices:
+        vendor_id = hex(device.idVendor)  # ID do fabricante
+        product_id = hex(device.idProduct)  # ID do produto
+ 
+        print(f"Dispositivo encontrado:")
+        print(f"  Vendor ID: {vendor_id}")
+        print(f"  Product ID: {product_id}")
+ 
+#list_usb_devices()
 # Enviar os dados para a ESP32
 send_json_to_esp32(data_to_send)
