@@ -77,6 +77,7 @@ def list_usb_devices():
         print(f"  Vendor ID: {vendor_id}")
         print(f"  Product ID: {product_id}")
  
+##
 #list_usb_devices()
 # Enviar os dados para a ESP32
 send_json_to_esp32(data_to_send)
