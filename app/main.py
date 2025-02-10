@@ -15,7 +15,7 @@ def update_config(modifications: Dict) -> Dict:
     return stored_config
 
 @app.post("/maestro_config")
-async def get_x_config(data: Dict = Body(...)):
+async def create_maestro_config(data: Dict = Body(...)):
     """
     GET /maestro_config
     Recebe um JSON (serializado no corpo da requisição) e o armazena na variável global,
@@ -33,7 +33,7 @@ async def get_x_config(data: Dict = Body(...)):
     return stored_config
 
 @app.get("/maestro_config")
-async def get_x_config(data: Dict = Body(...)):
+async def get_maestro_config(data: Dict = Body(...)):
     """
     GET /maestro_config
     Recebe um JSON (serializado no corpo da requisição) e o armazena na variável global,
@@ -49,7 +49,7 @@ async def get_x_config(data: Dict = Body(...)):
     return stored_config
 
 @app.put("/maestro_config")
-async def put_x_config(modifications: Dict = Body(...)):
+async def put_maestro_config(modifications: Dict = Body(...)):
     """
     PUT /maestro_config
     Recebe um JSON contendo as modificações desejadas para certas chaves do config
