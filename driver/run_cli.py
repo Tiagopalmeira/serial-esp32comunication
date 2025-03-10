@@ -4,7 +4,7 @@ import keyboard
 
 def estabelecer_comunicacao_serial(porta, baud_rate):
     try:
-        # Abrir a porta serial
+        # Abrir a porta serial.
         ser = serial.Serial(porta, baud_rate)
         print("Comunicação serial estabelecida com sucesso!")
         return ser
