@@ -1,14 +1,32 @@
-import subprocess
+import serial
+import time
 
-def executar_comando(comando):
-    try:
-        resultado = subprocess.run(comando, capture_output=True, text=True, check=True, shell=True)
-        print("----- SAIDA DO PROCESSO -----\n")
-        print(resultado.stdout)
-    except subprocess.CalledProcessError as e:
-        print(f"Erro ao executar o comando: {e}")
-        print(f"Saída de erro: {e.stderr}")
+porta_serial = "COM4"
+baud_rate = 115200
 
-# Exemplo de uso
-comando = "dir"
-executar_comando(comando)
+try:
+    esp32 = serial.Serial(porta_serial, baud_rate, timeout=1)
+    time.sleep(2)
+
+    def enviar_comando(comando):
+        esp32.write((comando + "\n").encode())
+        time.sleep(0.5)
+        resposta = esp32.read_all().decode().strip()
+        if resposta:
+            print(f"ESP32: {resposta}")
+        else:
+            print("Nenhuma resposta do ESP32.")
+
+    print("Digite os comandos para o ESP32. Digite 'sair' para encerrar.")
+
+    while True:
+        cmd = input("> ").strip()
+        if cmd.lower() == "sair":
+            print("Encerrando conexão...")
+            break
+        enviar_comando(cmd)
+
+    esp32.close()
+
+except serial.SerialException as e:
+    print(f"Erro ao conectar com ESP32: {e}")
