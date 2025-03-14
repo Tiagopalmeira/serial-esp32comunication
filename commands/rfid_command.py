@@ -3,9 +3,10 @@ import time
 
 class RFIDWrite(Command):
     def send(self, comm):
+        hex_value= "set lrfid 0xFFFFFFFFFF"
         time.sleep(0.1)
-        comm.ser.write(b"lrfid set 0xFFFFFFFFF\r\n")
-        time.sleep(0.1)
+        comm.ser.write((hex_value + '\n').encode())
+        time.sleep(0.5)
         print("[RFIDWrite]: Sent!")
 
     def on_validate(self, message_received) -> bool:
