@@ -4,32 +4,39 @@ import threading
 import re
 
 def decode_and_split(data_bytes):
+    # Decodificar os bytes em uma string e dividir pelas quebras de linha.
     text = data_bytes.decode('utf-8', errors='ignore')
     lines = re.split(r'[\r\n]+', text)
     return [l.strip() for l in lines if l.strip()]
 
 class Communication:
     def __init__(self, port, baud_rate, callback):
+        # Iniciando as variáveis de configuração, callback e serial.
         self.port = port
         self.baud_rate = baud_rate
         self.callback = callback
         self.ser = None
         try:
+            # Tentando abrir a porta serial
             self.ser = serial.Serial(port, baud_rate, timeout=0.1)
         except serial.SerialException as e:
-            print(f"[STM32]: Error opening serial port: {e}")
+            # Se não conseguir abrir a porta, mostramos um erro claro
+            print(f"[STM32]: Erro ao abrir a porta serial: {e}")
             self.ser = None
-
         self.running = False
         self.listening_thread = None
         self.pending_command = None
+        self.lock = threading.Lock()  # Adicionamos um lock para proteger o acesso ao comando pendente.
 
     @property
     def is_connected(self):
+        # Verifica se a conexão serial está ativa
         return self.ser is not None
 
     def start_listening(self):
+        # Inicia a escuta da porta serial se estiver conectada
         if not self.is_connected:
+            print("[STM32]: Não há conexão serial.")
             return
         self.running = True
         self.listening_thread = threading.Thread(
@@ -38,60 +45,70 @@ class Communication:
         self.listening_thread.start()
 
     def listening_loop(self):
-        buffer_line = b""
-        stacked_lines = []
+        # Loop responsável por ler a porta serial continuamente
+        buffer_line = b""  # Acumulador de bytes lidos
+        stacked_lines = []  # Acumulador de linhas completas
         while self.running:
             try:
-                # Lê tudo que estiver disponível no momento
-                read_count = self.ser.in_waiting
+                read_count = self.ser.in_waiting  # Verifica se há dados para ler
                 if read_count:
                     chunk = self.ser.read(read_count)
-                    buffer_line += chunk
+                    buffer_line += chunk  # Adiciona ao buffer
                 else:
-                    # Se não chegou nada novo, é um bom momento para “dar flush”.
                     if buffer_line:
-                        # Extrai as linhas completas do buffer
+                        # Quando não há novos dados, tentamos processar o buffer
                         lines_found = decode_and_split(buffer_line)
-                        buffer_line = b""
-                        # Empilha as linhas extraídas
-                        stacked_lines.extend(lines_found)
+                        buffer_line = b""  # Reseta o buffer após processar
+                        stacked_lines.extend(lines_found)  # Adiciona as linhas completas
 
-                    # Se há linhas acumuladas, imprimimos de uma só vez
+                    # Se há linhas acumuladas, processamos elas
                     if stacked_lines:
-                        # Monta um único bloco com quebras de linha
                         multiline_str = "\n".join(stacked_lines)
-                        # Faz o print "empilhado"
+                        # Chama o callback com as linhas recebidas
                         self.callback(multiline_str)
 
-                        # Agora, para cada linha individual,
-                        # tentamos validar o comando pendente.
-                        for line_decoded in stacked_lines:
-                            if (self.pending_command and
-                                self.pending_command.on_validate(line_decoded)):
-                                self.pending_command.on_receive(self, line_decoded)
-                                self.pending_command = None
+                        # Processamos os comandos, se houver algum pendente
+                        with self.lock:  # Bloqueamos para evitar problemas de concorrência
+                            for line_decoded in stacked_lines:
+                                if self.pending_command and self.pending_command.on_validate(line_decoded):
+                                    self.pending_command.on_receive(self, line_decoded)
+                                    self.pending_command = None
 
-                        # Limpamos a pilha após imprimir e validar
-                        stacked_lines.clear()
+                        stacked_lines.clear()  # Limpa as linhas após o processamento
 
-                time.sleep(0.03)
-
+                time.sleep(0.03)  # Espera um pouco antes de ler novamente
             except Exception as e:
-                print(f"[STM32]: Error reading data: {e}")
-                time.sleep(0.1)
+                print(f"[STM32]: Erro ao ler os dados: {e}")
+                time.sleep(0.1)  # Espera antes de tentar novamente
 
     def send(self, command_obj):
+        # Envia um comando se a conexão estiver ativa
         if not self.is_connected:
-            print("[STM32]: Cannot send command, no serial connection.")
+            print("[STM32]: Não é possível enviar comando, sem conexão serial.")
             return
-        self.pending_command = command_obj
+        with self.lock:  # Bloqueio para proteger o acesso ao comando pendente
+            self.pending_command = command_obj
         try:
-            command_obj.send(self)
-            print(f"[STM32]: Command sent: {command_obj.__class__.__name__}")
+            command_obj.send(self)  # Envia o comando para a porta serial
+            print(f"[STM32]: Comando enviado: {command_obj.__class__.__name__}")
         except Exception as e:
-            print(f"[STM32]: Error sending command: {e}")
+            print(f"[STM32]: Erro ao enviar comando: {e}")
 
     def close(self):
+        # Fecha a conexão serial de forma segura
         self.running = False
         if self.ser:
+            # Espera a thread de leitura terminar antes de fechar
+            if self.listening_thread and self.listening_thread.is_alive():
+                self.listening_thread.join()
             self.ser.close()
+            print("[STM32]: Conexão serial fechada com sucesso.")
+
+    def reconnect(self):
+        # Método adicional para tentar reconectar a porta serial, se necessário.
+        if self.ser and not self.ser.is_open:
+            try:
+                self.ser.open()
+                print("[STM32]: Porta serial reconectada.")
+            except serial.SerialException as e:
+                print(f"[STM32]: Erro ao tentar reconectar: {e}")

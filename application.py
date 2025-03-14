@@ -42,7 +42,7 @@ def main():
             interactive_mode_event.set()
 
     def create_connection():
-        return Communication(port="COM7", baud_rate=115200, callback=stm32_callback)
+        return Communication(port="COM10", baud_rate=115200, callback=stm32_callback)
 
     comm = create_connection()
     if comm.is_connected:
