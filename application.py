@@ -4,6 +4,7 @@ import queue
 from core.terminalui import TerminalUI
 from core.communication import Communication
 from commands.rfid_command import RFIDWrite
+from commands.fingerprint_count import FPCount
 
 def user_input_loop(ui, input_queue):
     while True:
@@ -19,6 +20,7 @@ def print_disconnected_menu(ui):
 
 def print_connected_menu(ui):
     ui.print_message("Menu:", tag="API UI")
+    ui.print_message("2 - Send FP Count Command", tag="API UI")
     ui.print_message("1 - Send RFID Command", tag="API UI")
     ui.print_message("0 - Exit", tag="API UI")
 
@@ -42,7 +44,7 @@ def main():
             interactive_mode_event.set()
 
     def create_connection():
-        return Communication(port="COM7", baud_rate=115200, callback=stm32_callback)
+        return Communication(port="/dev/ttyACM0", baud_rate=115200, callback=stm32_callback)
 
     comm = create_connection()
     if comm.is_connected:
@@ -100,7 +102,11 @@ def main():
                 option = None
 
             if option:
-                if option.strip() == "1":
+                if option.strip() == "2":
+                    ui.print_message("Sending FP Count command...", tag="API UI")
+                    comm.send(FPCount())
+                    should_print_menu = True
+                elif option.strip() == "1":
                     ui.print_message("Sending RFID command...", tag="API UI")
                     comm.send(RFIDWrite())
                     should_print_menu = True

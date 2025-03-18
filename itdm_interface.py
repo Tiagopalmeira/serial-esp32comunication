@@ -1,5 +1,6 @@
 from core.communication import Communication
 from commands.rfid_command import RFIDWrite
+from commands.fingerprint_count import FPCount
 
 class ITDMInterface:
     def __init__(self, comm: Communication):
@@ -11,3 +12,7 @@ class ITDMInterface:
     def WriteRFID(self):
         print("[ITDM]: Enviando comando RFID...")
         self.comm.send(RFIDCommand())
+    
+    def CountFP(self):
+        print("[ITDM]: Enviando comando FP Count")
+        self.comm.send(FPCount())
