@@ -5,10 +5,15 @@ from core.terminalui import TerminalUI
 from core.communication import Communication
 from commands.rfid_command import RFIDWrite
 from commands.fingerprint_count import FPCount
+from commands.fingerprint_enroll import FPUnenroll
+from commands.fingerprint_enroll import FPEnrollSubscribe
+from commands.fingerprint_enroll import FPEnrollBegin
+from commands.fingerprint_enroll import FPEnrollCapture
+from commands.fingerprint_enroll import FPEnrollFinalize
 
 def user_input_loop(ui, input_queue):
     while True:
-        user_in = ui.prompt("Select an option: ", tag="API UI")
+        user_in = ui.prompt("", tag="API UI")
         input_queue.put(user_in)
         if user_in.strip() == "0":
             break
@@ -20,8 +25,12 @@ def print_disconnected_menu(ui):
 
 def print_connected_menu(ui):
     ui.print_message("Menu:", tag="API UI")
-    ui.print_message("2 - Send FP Count Command", tag="API UI")
-    ui.print_message("1 - Send RFID Command", tag="API UI")
+    ui.print_message("1 - Send FP Unrenroll", tag="API UI")
+    ui.print_message("2 - Send FP Subscribe", tag="API UI")
+    ui.print_message("3 - Send FP Begin", tag="API UI")
+    ui.print_message("4 - Send FP Capture", tag="API UI")
+    ui.print_message("5 - Send FP Finalize", tag="API UI")
+
     ui.print_message("0 - Exit", tag="API UI")
 
 def main():
@@ -44,7 +53,7 @@ def main():
             interactive_mode_event.set()
 
     def create_connection():
-        return Communication(port="/dev/ttyACM0", baud_rate=115200, callback=stm32_callback)
+        return Communication(port="COM7", baud_rate=115200, callback=stm32_callback)
 
     comm = create_connection()
     if comm.is_connected:
@@ -77,7 +86,6 @@ def main():
                     if comm.is_connected:
                         comm.start_listening()
                         ui.print_status("Serial connection established successfully.", success=True)
-                        ui.print_message("Waiting for the STM32 messages...", tag="API UI")
                         interactive_mode_event.clear()
                         interactive_mode_event.wait()
                         ui.print_status("Interactive mode activated.", success=True)
@@ -88,7 +96,7 @@ def main():
                     ui.print_message("Exiting...", tag="API UI")
                     break
                 else:
-                    ui.print_message("Invalid option. Please try again.", tag="API UI")
+                    #ui.print_message("Invalid option. Please try again.", tag="API UI")
                     should_print_menu = True
 
         else:
@@ -102,20 +110,24 @@ def main():
                 option = None
 
             if option:
+                if option.strip() == "1":
+                    comm.send(FPUnenroll())
+                    should_print_menu = True
                 if option.strip() == "2":
-                    ui.print_message("Sending FP Count command...", tag="API UI")
-                    comm.send(FPCount())
-                    should_print_menu = True
-                elif option.strip() == "1":
-                    ui.print_message("Sending RFID command...", tag="API UI")
-                    comm.send(RFIDWrite())
-                    should_print_menu = True
+                    comm.send(FPEnrollSubscribe())
+                    should_print_menu = False
+                if option.strip() == "3":
+                    comm.send(FPEnrollBegin())
+                    should_print_menu = False
+                if option.strip() == "4":
+                    comm.send(FPEnrollCapture())
+                    should_print_menu = False
+                if option.strip() == "5":
+                    comm.send(FPEnrollFinalize())
+                    should_print_menu = False
                 elif option.strip() == "0":
                     ui.print_message("Exiting interactive mode...", tag="API UI")
                     break
-                else:
-                    ui.print_message("Invalid option. Please try again.", tag="API UI")
-                    should_print_menu = True
 
         time.sleep(0.1)
 
