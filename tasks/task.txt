@@ -10,6 +10,7 @@ Pegar o recebimento de mensagem, e a partir dele, chamar 3 funcoes:
 Palmeira: 
 
 Investigar o uso de try, catch and finalize pra tornar a solucao mais elegante.
+
     Criar uma classe EnrollmentState, dentro de um arquivo enrollment_state.py, na root do projeto.
     
     Criar metodos OnUpdateState()
