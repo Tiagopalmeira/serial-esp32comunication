@@ -89,9 +89,28 @@ class FPEnrollFinalize(Command):
             time.sleep(0.01)
         
         time.sleep(1)
-               
+
+    def on_receive(self, comm, message_received):
+        print("[FPEnrollFinalize]: Received message:", message_received)
+
     def on_validate(self, message_received) -> bool:
         return "successful" in message_received.lower()
 
-    def on_receive(self, comm, message_received):
-        print("[Enroll Subscribe Local]: We received a matching line for this command!")
+    def on_success(self, comm, message_received):
+        print("[FPEnrollFinalize]: Feedback validation succeeded.")
+
+    def on_failure(self, comm, message_received):
+        print("[FPEnrollFinalize]: Feedback validation failed.")
+
+    def process_feedback(self, comm, message_received):
+        
+        self.on_receive(comm, message_received)
+
+        if self.on_validate(message_received):
+
+            self.on_success(comm, message_received)
+
+        else:
+
+            self.on_failure(comm, message_received)               
+    
